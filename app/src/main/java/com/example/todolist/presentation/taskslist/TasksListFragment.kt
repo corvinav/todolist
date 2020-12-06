@@ -22,7 +22,7 @@ class TasksListFragment : Fragment() {
 
     private lateinit var binding: TasksListFragmentBinding
     private lateinit var tasksAdapter: TasksAdapter
-    var isTaskAdded = false
+    private var isTaskAdded = false
 
     private val viewModel: TasksListViewModel by viewModels() {
         val api = (activity?.application as TodoApplication).api

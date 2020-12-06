@@ -8,11 +8,11 @@ import io.reactivex.Scheduler
 import io.reactivex.android.plugins.RxAndroidPlugins
 import io.reactivex.functions.Function
 import io.reactivex.schedulers.Schedulers
-import org.junit.Test
-
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
+import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 import org.mockito.Mockito
