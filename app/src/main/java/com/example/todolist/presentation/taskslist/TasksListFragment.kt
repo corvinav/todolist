@@ -9,7 +9,10 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.todolist.TodoApplication
+import com.example.todolist.data.TasksRepository
 import com.example.todolist.databinding.TasksListFragmentBinding
+import com.example.todolist.domain.usecases.TasksListUseCase
 
 class TasksListFragment : Fragment() {
 
@@ -17,11 +20,23 @@ class TasksListFragment : Fragment() {
         fun newInstance() = TasksListFragment()
     }
 
-    lateinit private var binding: TasksListFragmentBinding
-    lateinit private var tasksAdapter: TasksAdapter
+    private lateinit var binding: TasksListFragmentBinding
+    private lateinit var tasksAdapter: TasksAdapter
     var isTaskAdded = false
 
-    private val viewModel: TasksListViewModel by viewModels()
+    private val viewModel: TasksListViewModel by viewModels() {
+        val api = (activity?.application as TodoApplication).api
+        if (api != null) {
+            TasksListViewModel.ViewModelFactory(
+                TasksListUseCase(
+                    TasksRepository(api)
+                )
+            )
+        } else {
+            throw RuntimeException("No activity!")
+        }
+
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -43,17 +58,17 @@ class TasksListFragment : Fragment() {
     }
 
     private fun initLoadingUI() {
-        viewModel.dataLoading.observe(viewLifecycleOwner){
+        viewModel.dataLoading.observe(viewLifecycleOwner) {
             val progressBar = binding.progressBar
-            if (it){
-                progressBar.visibility= View.VISIBLE
-            }else{
-                progressBar.visibility= View.GONE
+            if (it) {
+                progressBar.visibility = View.VISIBLE
+            } else {
+                progressBar.visibility = View.GONE
             }
         }
-        viewModel.showError.observe(viewLifecycleOwner){
+        viewModel.showError.observe(viewLifecycleOwner) {
             it.getContentIfNotHandled()?.let {
-                Toast.makeText(context,"Data loading error!", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Data loading error!", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -81,7 +96,7 @@ class TasksListFragment : Fragment() {
     private fun initAddButton() {
         binding.addBtn.setOnClickListener() {
             isTaskAdded = viewModel.addTask(binding.taskNameET.text.toString())
-            if (isTaskAdded){
+            if (isTaskAdded) {
                 binding.taskNameET.text.clear()
             }
         }

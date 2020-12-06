@@ -3,12 +3,19 @@ package com.example.todolist.presentation.taskslist
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import com.example.todolist.domain.entities.Task
+import com.example.todolist.domain.usecases.TasksListUseCase
 import com.example.todolist.utils.Event
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
+import io.reactivex.observers.DisposableObserver
 
-class TasksListViewModel : ViewModel(),
+class TasksListViewModel(private val tasksListUseCase: TasksListUseCase) : ViewModel(),
     TasksAdapter.OnTaskAction {
     private val USER_ID = 1L
+
+    private var tasksLoadingDisposable: Disposable? = null
 
     private val _tasks = MutableLiveData<List<Task>>().apply { value = emptyList() }
     val tasks: LiveData<List<Task>> = _tasks
@@ -33,14 +40,29 @@ class TasksListViewModel : ViewModel(),
     }
 
     fun loadList() {
-        val list = mutableListOf<Task>()
-        list.add(Task(1, 1, "aergsearg", true))
-        list.add(Task(1, 2, "aergseargvdfv", false))
-        list.add(Task(1, 3, "11111111aergsearg", false))
-        list.add(Task(1, 4, "2222222aergsearg", true))
-        list.add(Task(1, 5, "3333333333aergsea lm;lm ;lkm;lm;l  ',';l,';,.';,lkmn;l,' rg", false))
-        _tasks.value = list
+        safelyDispose(tasksLoadingDisposable)
+        _dataLoading.value = true
+        tasksLoadingDisposable = tasksListUseCase.getTasks(USER_ID)
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeWith(getTasksObserver())
     }
+
+    private fun getTasksObserver(): DisposableObserver<List<Task>> =
+        object : DisposableObserver<List<Task>>() {
+            override fun onNext(tasksList: List<Task>) {
+                _tasks.value = tasksList
+            }
+
+            override fun onError(e: Throwable) {
+                _showError.value = Event(Any())
+                _dataLoading.value = false
+                e.printStackTrace()
+            }
+
+            override fun onComplete() {
+                _dataLoading.value = false
+            }
+        }
 
     fun addTask(title: String): Boolean {
         val oldList = _tasks.value
@@ -52,6 +74,26 @@ class TasksListViewModel : ViewModel(),
             return true
         }
         return false
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        safelyDispose(tasksLoadingDisposable)
+    }
+
+    private fun safelyDispose(vararg disposables: Disposable?) {
+        for (subscription in disposables) {
+            if (subscription != null && !subscription.isDisposed) {
+                subscription.dispose()
+            }
+        }
+    }
+
+    class ViewModelFactory(val tasksListUseCase: TasksListUseCase) :
+        ViewModelProvider.Factory {
+        override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+            return TasksListViewModel(tasksListUseCase) as T
+        }
     }
 }
 
