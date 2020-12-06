@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">ToDoList</string>
+    <string name="tasks_list_fragment_add_btn">ADD</string>
+    <string name="tasks_list_fragment_task_name_hint">Task name</string>
 </resources>
